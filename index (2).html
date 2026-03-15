@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>인천 아이 키우기 🥚</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic','Segoe UI',sans-serif;background:#FFF0F5;min-height:100vh;}
+#root{min-height:100vh;}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes floatBadge{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes bubblePop{0%{opacity:0;transform:scale(0.6) translateY(8px)}60%{transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
+@keyframes particleUp{0%{opacity:1;transform:translateY(0) scale(0.5)}60%{opacity:1;transform:translateY(-70px) scale(1)}100%{opacity:0;transform:translateY(-120px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+@keyframes growUp{0%{opacity:0;transform:scale(0.5)}60%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+@keyframes toastIn{0%{opacity:0;transform:translateX(-50%) translateY(20px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes tear{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(14px)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const{useState,useEffect,useRef,useCallback}=React;
+
+const STAGES=[
+  {id:0,name:"1~3개월",label:"신생아",color:"#FF6B9D",bg:"#FFF0F5",soft:"#FFD6E8",emoji:"🥚",
+   growth:{male:"키 54.7~61.4cm · 몸무게 4.5~6.4kg",female:"키 53.7~59.8cm · 몸무게 4.2~5.8kg"},
+   dev:["30cm 거리 물체를 또렷하게 봐요","엄마·아빠 목소리를 알아들어요","목을 점차 가누기 시작해요"],
+   warn:["큰 소리에 반응하지 않아요","잘 먹지 않아요","움직이는 물건을 눈으로 안 따라봐요"],
+   play:["다양한 소리 들려주기 (음악·딸랑이)","모빌 보여주기","부드럽게 딸랑이 흔들기"],
+   bubble:"😭 배고파요!",bubbleSub:"2시간 됐어요...",
+   choices:[
+     {text:"🍼 수유하기",correct:true,hhp:30,msg:"잘 먹었어요! 신생아는 2~3시간마다 수유가 필요해요 💕"},
+     {text:"😴 재우기",correct:false,hhp:-8,msg:"배가 고픈데 재우면 더 울어요. 먼저 수유해요!"},
+     {text:"🎶 노래해주기",correct:false,hhp:-5,msg:"노래도 좋지만 지금은 배고픈 상황이에요!"},
+   ],info:null},
+  {id:1,name:"4~6개월",label:"아기",color:"#FFB830",bg:"#FFF8E7",soft:"#FFE5A0",emoji:"🐣",
+   growth:{male:"키 63.9~67.6cm · 몸무게 7.0~7.9kg",female:"키 62.1~65.7cm · 몸무게 6.4~7.3kg"},
+   dev:["알록달록 색깔을 구분해요","자기 이름에 반응해요","뒤집기를 시작해요"],
+   warn:["물건을 잡으려 하지 않아요","소리에 반응 없어요","뒤집기를 시도하지 않아요"],
+   play:["까꿍놀이·촉감놀이·책읽기","깨물 수 있는 장난감","손목 딸랑이·촉감책"],
+   bubble:"🧸 장난감\n갖고 싶어요!",bubbleSub:"뭔가 깨물고 싶어요~",
+   choices:[
+     {text:"🧸 깨물 수 있는 장난감",correct:true,hhp:30,msg:"이 시기엔 구강기! 깨물 수 있는 장난감이 딱 맞아요 🧸"},
+     {text:"📱 스마트폰 보여주기",correct:false,hhp:-10,msg:"영상은 돌 이전엔 권장하지 않아요!"},
+     {text:"🚗 자동차 장난감",correct:false,hhp:-5,msg:"자동차는 아직 일러요. 촉감 장난감이 더 좋아요!"},
+   ],info:{title:"도담도담 장난감월드",desc:"인천 전역 20개소! 장난감·도서를 무료로 대여해요.\n화~토 10:00~18:30 운영, 택배 대여도 가능해요!",url:"https://www.dodamtoys.or.kr",label:"가까운 지점 찾기 →"}},
+  {id:2,name:"7~11개월",label:"이유식기",color:"#2ECC71",bg:"#F0FFF4",soft:"#A8F0C0",emoji:"🐥",
+   growth:{male:"키 69.2~75.7cm · 몸무게 8.3~9.6kg",female:"키 67.3~74cm · 몸무게 7.6~8.9kg"},
+   dev:["배밀이를 시작해요","가구 잡고 일어서기도 해요","옹알이하고 단어를 이해해요"],
+   warn:["물건을 잡으려 하지 않아요","주변 소리에 반응 없어요","도움 줘도 다리에 힘을 못 줘요"],
+   play:["음악 들으며 놀기","알록달록 공·소리나는 공","오뚝이·태엽인형"],
+   bubble:"🥣 뭔가\n먹고 싶어요!",bubbleSub:"이유식 시작해요~",
+   choices:[
+     {text:"🌾 쌀미음부터 시작",correct:true,hhp:30,msg:"정답! 쌀미음 → 채소 → 과일 순서로 시작해요 🥣"},
+     {text:"🍎 과일부터 시작",correct:false,hhp:-8,msg:"과일은 달아서 편식이 생길 수 있어요! 쌀미음부터요."},
+     {text:"🥩 고기부터 시작",correct:false,hhp:-8,msg:"고기는 7~8개월 이후예요. 쌀미음이 먼저예요!"},
+   ],info:null},
+  {id:3,name:"13~24개월",label:"걸음마기",color:"#3B82F6",bg:"#EFF6FF",soft:"#BFDBFE",emoji:"🐤",
+   growth:{male:"키 76.9~87.1cm · 몸무게 9.9~12.2kg",female:"키 75.2~85.7cm · 몸무게 9.2~11.5kg"},
+   dev:["혼자 걷고 계단 오르고 뛰어요","궁금한 게 많아져 질문이 늘어요","물건 주고받기를 좋아해요"],
+   warn:["물건을 가리키지 않아요","다른 사람을 따라하지 않아요","아는 단어가 6개 미만이에요"],
+   play:["그림책 읽기","유아용 농구·축구 놀이"],
+   bubble:"👣 걸을 거예요!",bubbleSub:"으쌰! 쿵!",
+   choices:[
+     {text:"👏 넘어져도 응원해요",correct:true,hhp:30,msg:"넘어져도 괜찮아요! 격려가 최고의 교육이에요 👣"},
+     {text:"🙅 위험해서 못 하게",correct:false,hhp:-12,msg:"과잉보호는 발달을 늦춰요. 안전하게 지켜봐 주세요!"},
+     {text:"🤱 계속 안아줘요",correct:false,hhp:-5,msg:"이 시기엔 스스로 해보는 경험이 중요해요!"},
+   ],info:null},
+  {id:4,name:"25~36개월",label:"유아초기",color:"#8B5CF6",bg:"#F5F3FF",soft:"#DDD6FE",emoji:"⭐",
+   growth:{male:"키 88~95.4cm · 몸무게 12.4~14.7kg",female:"키 86.6~95.4cm · 몸무게 11.7~14.2kg"},
+   dev:["혼자 가구에 올라갔다 내려와요","숨긴 물건을 찾고 지시를 따라요","사물 이름을 듣고 가리켜요"],
+   warn:["간단한 지시를 이해 못해요","장난감을 다루지 못해요","침을 많이 흘리거나 말이 불명확해요"],
+   play:["이야기 많이 들려주기","음악과 율동 함께하기","아빠와 그림책 읽기"],
+   bubble:"💰 지원금\n받고 있어요?",bubbleSub:"인천시 특별 혜택!",
+   choices:[
+     {text:"인천 천사지원금 연 120만원",correct:true,hhp:30,msg:"정답! 12~84개월 인천 거주 아동, 연 120만원 e음 포인트 🌟"},
+     {text:"전국 공통 지원금이에요",correct:false,hhp:-8,msg:"천사지원금은 인천시만의 특별 지원금이에요!"},
+     {text:"신청 안 해도 자동 지급",correct:false,hhp:-8,msg:"아이 생일부터 120일 이내에 직접 신청해야 해요!"},
+   ],info:{title:"천사지원금 신청",desc:"12~84개월 인천 거주 아동\n아이 생일부터 120일 이내 신청!\n매년 새로 신청해야 해요.",url:"https://plus.gov.kr/",label:"정부24에서 신청하기 →"}},
+];
+
+const MAX_HHP=150;
+
+function BabyFace({stage,mood,bounce,blinking}){
+  const sad=mood==="sad",happy=mood==="happy";
+  return(
+    <div style={{position:"relative",display:"inline-block"}}>
+      <div style={{width:100,height:100,borderRadius:"50%",background:`radial-gradient(circle at 38% 32%,white,${stage.soft})`,boxShadow:`0 8px 32px ${stage.color}44`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",transition:"all 0.4s cubic-bezier(.34,1.56,.64,1)",transform:bounce?"scale(1.18) rotate(-10deg)":"scale(1)",animation:bounce?"none":"breathe 3s ease-in-out infinite"}}>
+        <div style={{position:"absolute",width:18,height:11,borderRadius:"50%",background:`${stage.color}44`,top:60,left:10,filter:"blur(3px)"}}/>
+        <div style={{position:"absolute",width:18,height:11,borderRadius:"50%",background:`${stage.color}44`,top:60,right:10,filter:"blur(3px)"}}/>
+        <div style={{fontSize:14,letterSpacing:13,color:"#3D2B1F",marginBottom:5,marginTop:-6,opacity:blinking?0:1,transition:"opacity 0.08s"}}>{sad?"·  ·":happy?"^  ^":"◕  ◕"}</div>
+        <div style={{fontSize:17,color:sad?"#AAA":stage.color,transform:sad?"scaleY(-1)":"none",transition:"all 0.4s"}}>{sad?"∩":happy?"ω":"‿"}</div>
+        {sad&&<><div style={{position:"absolute",top:56,left:18,fontSize:10,animation:"tear 1s ease-in infinite"}}>💧</div><div style={{position:"absolute",top:56,right:18,fontSize:10,animation:"tear 1s ease-in 0.3s infinite"}}>💧</div></>}
+      </div>
+      <div style={{position:"absolute",bottom:-4,right:-4,fontSize:24,animation:"floatBadge 2.5s ease-in-out infinite"}}>{stage.emoji}</div>
+    </div>
+  );
+}
+
+function SpeechBubble({text,subtext,color,visible}){
+  if(!visible)return <div style={{minHeight:60}}/>;
+  return(
+    <div style={{animation:"bubblePop 0.4s ease-out"}}>
+      <div style={{background:"white",border:`2.5px solid ${color}`,borderRadius:20,padding:"10px 16px",boxShadow:`0 6px 20px ${color}33`,position:"relative",maxWidth:200,textAlign:"center"}}>
+        <div style={{fontSize:15,fontWeight:800,color:"#2D2D2D",whiteSpace:"pre-line",lineHeight:1.4}}>{text}</div>
+        {subtext&&<div style={{fontSize:11,color:"#AAA",marginTop:3}}>{subtext}</div>}
+        <div style={{position:"absolute",bottom:-13,left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"10px solid transparent",borderRight:"10px solid transparent",borderTop:`12px solid ${color}`}}/>
+        <div style={{position:"absolute",bottom:-10,left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"8px solid transparent",borderRight:"8px solid transparent",borderTop:"10px solid white"}}/>
+      </div>
+    </div>
+  );
+}
+
+function HHPBar({hhp,color}){
+  const pct=Math.max(0,Math.min(100,(hhp/MAX_HHP)*100));
+  const bc=pct>60?color:pct>30?"#FFB830":"#FF4444";
+  return(
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+        <span style={{fontSize:12,fontWeight:700,color:"#888"}}>💗 마음지수</span>
+        <span style={{fontSize:13,fontWeight:800,color:bc}}>{hhp}/{MAX_HHP}</span>
+      </div>
+      <div style={{height:13,background:"#F0F0F0",borderRadius:99,overflow:"hidden"}}>
+        <div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,${bc}88,${bc})`,borderRadius:99,transition:"width 0.8s cubic-bezier(.34,1.56,.64,1)",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent)",animation:"shimmer 1.5s infinite"}}/>
+        </div>
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+        {["😢","😕","🙂","😊","🥰"].map((e,i)=><span key={i} style={{fontSize:13,opacity:Math.floor(pct/20)>=i?1:0.2,transition:"opacity 0.4s"}}>{e}</span>)}
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const[screen,setScreen]=useState("intro");
+  const[babyName,setBabyName]=useState("");
+  const[inp,setInp]=useState("");
+  const[stageIdx,setStageIdx]=useState(0);
+  const[hhp,setHhp]=useState(20);
+  const[phase,setPhase]=useState("info");
+  const[mood,setMood]=useState("neutral");
+  const[bounce,setBounce]=useState(false);
+  const[blinking,setBlinking]=useState(false);
+  const[bubbleVisible,setBubbleVisible]=useState(false);
+  const[particles,setParticles]=useState([]);
+  const[shaking,setShaking]=useState(false);
+  const[feedback,setFeedback]=useState(null);
+  const[toast,setToast]=useState(null);
+  const toastRef=useRef(null);
+  const stage=STAGES[stageIdx];
+
+  useEffect(()=>{
+    if(screen!=="game")return;
+    const t=setInterval(()=>{setBlinking(true);setTimeout(()=>setBlinking(false),120);},3500);
+    return()=>clearInterval(t);
+  },[screen]);
+
+  useEffect(()=>{
+    if(screen!=="game")return;
+    const t=setInterval(()=>setHhp(h=>Math.max(0,h-1)),8000);
+    return()=>clearInterval(t);
+  },[screen]);
+
+  const showToast=useCallback((msg,color)=>{
+    setToast({msg,color});
+    clearTimeout(toastRef.current);
+    toastRef.current=setTimeout(()=>setToast(null),2500);
+  },[]);
+
+  const spawnParticles=useCallback(()=>{
+    const em=["💕","⭐","✨","🎊","💫","🌸","🎀"];
+    setParticles(Array.from({length:10},(_,i)=>({id:Date.now()+i,emoji:em[Math.floor(Math.random()*em.length)],x:5+Math.random()*90,y:10+Math.random()*60,size:16+Math.floor(Math.random()*12),delay:i*0.07})));
+    setTimeout(()=>setParticles([]),2200);
+  },[]);
+
+  const goNextStage=useCallback(()=>{
+    if(stageIdx<STAGES.length-1){
+      setStageIdx(i=>i+1);setPhase("info");setMood("neutral");setBubbleVisible(false);
+      showToast(`🎉 ${STAGES[stageIdx+1].label}로 성장했어요!`,STAGES[stageIdx+1].color);
+    }else{setPhase("complete");}
+  },[stageIdx,showToast]);
+
+  const handleChoice=useCallback((choice)=>{
+    if(feedback)return;
+    setHhp(h=>Math.max(0,Math.min(MAX_HHP,h+choice.hhp)));
+    setBubbleVisible(false);
+    if(choice.correct){
+      setMood("happy");setBounce(true);spawnParticles();
+      setTimeout(()=>setBounce(false),600);
+      setFeedback({text:choice.msg,correct:true});setPhase("feedback");
+      setTimeout(()=>{setFeedback(null);if(stage.info)setPhase("info_popup");else goNextStage();},2200);
+    }else{
+      setMood("sad");setShaking(true);setTimeout(()=>setShaking(false),500);
+      setFeedback({text:choice.msg,correct:false});setPhase("feedback");
+      setTimeout(()=>{setFeedback(null);setMood("neutral");setPhase("choices");setBubbleVisible(true);},2000);
+    }
+  },[feedback,stage,spawnParticles,goNextStage]);
+
+
+
+  const startGame=()=>{if(!inp.trim())return;setBabyName(inp.trim());setScreen("game");};
+
+  if(screen==="intro")return(
+    <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#FFF0F5,#FFF8E7,#F0FFF4)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:"white",borderRadius:32,padding:"40px 28px",boxShadow:"0 24px 80px rgba(0,0,0,0.12)",maxWidth:380,width:"100%",textAlign:"center"}}>
+        <div style={{fontSize:72,marginBottom:8,display:"inline-block",animation:"floatBadge 2s ease-in-out infinite"}}>🥚</div>
+        <h1 style={{fontSize:26,fontWeight:900,color:"#1A1A2E",margin:"0 0 8px"}}>인천 아이 키우기</h1>
+        <p style={{fontSize:14,color:"#888",lineHeight:1.8,margin:"0 0 12px"}}>아이가 말풍선으로 신호를 보내요!<br/>올바른 반응으로 함께 성장해요 💕</p>
+        <div style={{display:"flex",gap:6,justifyContent:"center",marginBottom:16,flexWrap:"wrap"}}>
+          {STAGES.map((s,i)=><span key={i} style={{fontSize:11,color:s.color,background:s.bg,padding:"3px 10px",borderRadius:20,fontWeight:700}}>{s.emoji} {s.name}</span>)}
+        </div>
+        <div style={{background:"#FFF0F5",borderRadius:16,padding:"10px 16px",marginBottom:22,fontSize:12,color:"#FF6B9D",fontWeight:700,lineHeight:1.6}}>
+          🏙️ 인천시 공식 육아 정보 연동<br/><span style={{fontWeight:400,color:"#FF9AB5"}}>도담도담 · 천사지원금 신청 연결</span>
+        </div>
+        <input value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&startGame()} placeholder="아이 이름을 입력하세요"
+          style={{width:"100%",padding:"14px 18px",border:"2px solid #FFD6E8",borderRadius:18,fontSize:16,outline:"none",boxSizing:"border-box",textAlign:"center",marginBottom:14}}
+          onFocus={e=>e.target.style.borderColor="#FF6B9D"} onBlur={e=>e.target.style.borderColor="#FFD6E8"}/>
+        <button onClick={startGame} style={{width:"100%",padding:16,background:"linear-gradient(135deg,#FF6B9D,#FFB830)",border:"none",borderRadius:18,fontSize:18,fontWeight:900,color:"white",cursor:"pointer",boxShadow:"0 8px 28px rgba(255,107,157,0.4)"}}>
+          🌸 시작하기
+        </button>
+      </div>
+    </div>
+  );
+
+  return(
+    <div style={{minHeight:"100vh",background:`linear-gradient(170deg,${stage.bg} 0%,white 70%)`,padding:"16px 16px 48px",transition:"background 1.5s ease"}}>
+      <div style={{maxWidth:420,margin:"0 auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+          <div>
+            <div style={{fontSize:10,color:"#CCC",letterSpacing:1,fontWeight:600}}>AI 인천육아코디</div>
+            <div style={{fontSize:16,fontWeight:900,color:"#1A1A2E"}}>{babyName}이의 성장일기</div>
+          </div>
+          <div style={{background:`${stage.color}18`,border:`1.5px solid ${stage.color}44`,borderRadius:12,padding:"5px 12px",textAlign:"center"}}>
+            <div style={{fontSize:10,color:stage.color,fontWeight:700}}>{stage.name}</div>
+            <div style={{fontSize:13,fontWeight:900,color:"#1A1A2E"}}>{stage.label}</div>
+          </div>
+        </div>
+
+        <div style={{background:"white",borderRadius:28,padding:"24px 20px 20px",boxShadow:`0 10px 48px ${stage.color}18`,marginBottom:12,position:"relative",overflow:"hidden",minHeight:250}}>
+          <div style={{position:"absolute",top:-40,right:-40,width:130,height:130,borderRadius:"50%",background:`${stage.soft}44`,pointerEvents:"none"}}/>
+          <div style={{position:"absolute",bottom:-30,left:-30,width:90,height:90,borderRadius:"50%",background:`${stage.soft}33`,pointerEvents:"none"}}/>
+          <div style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
+            {particles.map(p=><div key={p.id} style={{position:"absolute",left:`${p.x}%`,top:`${p.y}%`,fontSize:p.size,opacity:0,animation:`particleUp 1.4s ${p.delay}s ease-out forwards`}}>{p.emoji}</div>)}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+            <div style={{marginBottom:12,minHeight:65,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+              {(phase==="bubble"||phase==="choices")&&!feedback
+                ?<SpeechBubble text={stage.bubble} subtext={stage.bubbleSub} color={stage.color} visible={bubbleVisible}/>
+                :phase==="feedback"&&feedback
+                ?<div style={{background:feedback.correct?"#F0FFF4":"#FFF5F5",border:`2px solid ${feedback.correct?"#16A34A":"#DC2626"}44`,borderRadius:16,padding:"10px 16px",maxWidth:250,textAlign:"center",fontSize:13,fontWeight:600,color:"#333",lineHeight:1.6,animation:"bubblePop 0.3s ease-out"}}>
+                  {feedback.correct?"✅ ":"❌ "}{feedback.text}
+                </div>
+                :<div style={{fontSize:12,color:"#CCC",fontWeight:600}}>{phase==="info"?"발달 정보를 확인하세요 👇":""}</div>
+              }
+            </div>
+            <div style={{animation:shaking?"shake 0.5s ease":"none"}}>
+              <BabyFace stage={stage} mood={mood} bounce={bounce} blinking={blinking}/>
+            </div>
+            <div style={{width:"100%",marginTop:18}}>
+              <HHPBar hhp={hhp} color={stage.color}/>
+            </div>
+          </div>
+        </div>
+
+        {phase==="info"&&(
+          <div style={{background:"white",borderRadius:24,padding:"18px",boxShadow:`0 6px 24px ${stage.color}14`,marginBottom:12,border:`1.5px solid ${stage.color}22`,animation:"fadeIn 0.4s ease"}}>
+            <div style={{fontSize:13,fontWeight:900,color:stage.color,marginBottom:12}}>{stage.emoji} {stage.name} 발달 정보</div>
+            <div style={{background:stage.bg,borderRadius:14,padding:"10px 14px",marginBottom:12}}>
+              <div style={{fontSize:11,fontWeight:700,color:stage.color,marginBottom:6}}>📏 이 시기 평균 성장</div>
+              <div style={{fontSize:12,color:"#555",lineHeight:1.9}}>👦 남아: {stage.growth.male}<br/>👧 여아: {stage.growth.female}</div>
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:6}}>✨ 이런 변화가 일어나요</div>
+              {stage.dev.map((d,i)=><div key={i} style={{fontSize:12,color:"#444",padding:"3px 0",display:"flex",gap:6}}><span style={{color:stage.color,flexShrink:0}}>▸</span>{d}</div>)}
+            </div>
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:6}}>🎮 추천 놀이</div>
+              {stage.play.map((p,i)=><div key={i} style={{fontSize:12,color:"#444",padding:"3px 0",display:"flex",gap:6}}><span style={{color:stage.color,flexShrink:0}}>▸</span>{p}</div>)}
+            </div>
+            <div style={{background:"#FFF5F5",borderRadius:12,padding:"10px 14px",marginBottom:14}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#DC2626",marginBottom:6}}>⚠️ 이 경우 전문가 상담 필요</div>
+              {stage.warn.map((w,i)=><div key={i} style={{fontSize:12,color:"#666",padding:"2px 0",display:"flex",gap:6}}><span style={{color:"#DC2626",flexShrink:0}}>□</span>{w}</div>)}
+            </div>
+            <button onClick={()=>{setPhase("bubble");setTimeout(()=>setBubbleVisible(true),300);}}
+              style={{width:"100%",padding:"14px",background:`linear-gradient(135deg,${stage.color}CC,${stage.color})`,border:"none",borderRadius:16,fontSize:15,fontWeight:800,color:"white",cursor:"pointer",boxShadow:`0 6px 20px ${stage.color}44`}}>
+              {stage.emoji} 미션 시작하기!
+            </button>
+          </div>
+        )}
+
+        {(phase==="choices"||phase==="bubble")&&bubbleVisible&&!feedback&&(
+          <div style={{background:"white",borderRadius:22,padding:"16px 14px",boxShadow:`0 6px 24px ${stage.color}14`,marginBottom:12,border:`1.5px solid ${stage.color}22`,animation:"fadeIn 0.3s ease"}}>
+            <div style={{fontSize:11,color:"#AAA",fontWeight:700,marginBottom:12,textAlign:"center"}}>어떻게 할까요?</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {stage.choices.map((c,i)=>(
+                <button key={i} onClick={()=>handleChoice(c)}
+                  style={{padding:"13px 16px",background:"white",border:`2px solid ${stage.color}33`,borderRadius:14,fontSize:14,fontWeight:700,color:"#2D2D2D",cursor:"pointer",textAlign:"left",transition:"all 0.18s",display:"flex",alignItems:"center",gap:10,boxShadow:`0 2px 8px ${stage.color}11`}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=stage.color;e.currentTarget.style.background=stage.bg;e.currentTarget.style.transform="translateX(4px)";}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor=stage.color+"33";e.currentTarget.style.background="white";e.currentTarget.style.transform="none";}}>
+                  <span style={{width:28,height:28,borderRadius:8,background:`${stage.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:stage.color,flexShrink:0}}>{["①","②","③"][i]}</span>
+                  {c.text}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {phase==="info_popup"&&stage.info&&(
+          <div style={{background:"white",borderRadius:24,padding:"22px 20px",boxShadow:`0 10px 40px ${stage.color}22`,marginBottom:12,border:`2px solid ${stage.color}44`,animation:"growUp 0.4s ease-out"}}>
+            <div style={{fontSize:11,color:stage.color,fontWeight:700,marginBottom:6}}>🏙️ 인천시 육아 서비스</div>
+            <div style={{fontSize:18,fontWeight:900,color:"#1A1A2E",marginBottom:8}}>{stage.info.title}</div>
+            <div style={{fontSize:13,color:"#555",lineHeight:1.7,marginBottom:16,whiteSpace:"pre-line"}}>{stage.info.desc}</div>
+            <a href={stage.info.url} target="_blank" rel="noopener noreferrer"
+              style={{display:"block",padding:"14px",background:`linear-gradient(135deg,${stage.color}CC,${stage.color})`,borderRadius:16,fontSize:14,fontWeight:800,color:"white",textDecoration:"none",textAlign:"center",marginBottom:10,boxShadow:`0 6px 20px ${stage.color}44`}}>
+              {stage.info.label}
+            </a>
+            <button onClick={goNextStage}
+              style={{width:"100%",padding:"12px",background:"#F5F5F5",border:"none",borderRadius:14,fontSize:13,fontWeight:700,color:"#777",cursor:"pointer"}}>
+              {stageIdx===STAGES.length-1?"완료하기 🎉":"다음 단계로 →"}
+            </button>
+          </div>
+        )}
+
+        {phase==="complete"&&(
+          <div style={{background:"white",borderRadius:28,padding:"32px 24px",boxShadow:`0 10px 48px ${stage.color}22`,marginBottom:12,textAlign:"center",border:`2px solid ${stage.color}44`,animation:"growUp 0.6s ease-out"}}>
+            <div style={{fontSize:64,marginBottom:12}}>🌟</div>
+            <h3 style={{fontSize:22,fontWeight:900,color:"#1A1A2E",margin:"0 0 8px"}}>{babyName}이가 다 컸어요!</h3>
+            <p style={{fontSize:14,color:"#666",lineHeight:1.8,margin:"0 0 24px"}}>신생아부터 유아까지 함께 키웠어요 💕<br/>실제 인천 육아코디 서비스로<br/>더 많은 혜택을 받아보세요!</p>
+            <a href="https://pf.kakao.com/_kLixon" target="_blank" rel="noopener noreferrer"
+              style={{display:"block",padding:"16px",background:"#FEE500",borderRadius:18,fontSize:15,fontWeight:900,color:"#3A1D1D",textDecoration:"none",marginBottom:12,boxShadow:"0 6px 24px rgba(254,229,0,0.5)"}}>
+              💬 AI 인천육아코디 채널 추가
+            </a>
+            <button onClick={()=>{setStageIdx(0);setHhp(20);setPhase("info");setMood("neutral");setBubbleVisible(false);}}
+              style={{width:"100%",padding:"13px",background:`${stage.color}18`,border:`2px solid ${stage.color}44`,borderRadius:16,fontSize:14,fontWeight:700,color:stage.color,cursor:"pointer"}}>
+              🔄 처음부터 다시하기
+            </button>
+          </div>
+        )}
+
+        <div style={{background:"white",borderRadius:18,padding:"12px 16px",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",marginBottom:12}}>
+          <div style={{fontSize:10,color:"#AAA",marginBottom:8,fontWeight:600}}>성장 단계</div>
+          <div style={{display:"flex",gap:4}}>
+            {STAGES.map((s,i)=>(
+              <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                <div style={{height:7,width:"100%",borderRadius:4,background:i<=stageIdx?stage.color:"#EEE",opacity:i===stageIdx?1:i<stageIdx?0.5:0.15,transition:"all 0.8s",boxShadow:i===stageIdx?`0 0 8px ${stage.color}88`:"none"}}/>
+                <span style={{fontSize:15,opacity:i<=stageIdx?1:0.2}}>{s.emoji}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        
+      </div>
+
+      {toast&&<div style={{position:"fixed",bottom:32,left:"50%",transform:"translateX(-50%)",background:toast.color,color:"white",padding:"11px 26px",borderRadius:26,fontWeight:800,fontSize:14,boxShadow:`0 8px 28px ${toast.color}66`,zIndex:300,whiteSpace:"nowrap",animation:"toastIn 0.3s ease-out"}}>{toast.msg}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
